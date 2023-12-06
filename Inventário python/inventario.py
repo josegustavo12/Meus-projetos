@@ -4,7 +4,7 @@ import qrcode
 import os
 
 produtos = []
-cores = { # cores que eu coloquei (prec)
+cores = { # cores que eu coloquei 
     'reset': '\033[0m',
     'preto': '\033[30m',
     'vermelho': '\033[31m',
@@ -17,8 +17,8 @@ cores = { # cores que eu coloquei (prec)
     'negrito': '\033[1m',
     'inverte_cores': '\033[7m',
 }
-
-def imprimir_string_colorida(texto, cor): # função para por cor na string
+# tive que botar fora e dentro das funções para que eu consiga modificar dinamicamente (veja mais na função que modifica as cores)
+def imprimir_string_colorida(texto, cor): # função para imprimir a string (a de imprimir e a de modificar as cores são diferentes)
     cores = {
         'reset': '\033[0m',
         'preto': '\033[30m',
@@ -31,42 +31,40 @@ def imprimir_string_colorida(texto, cor): # função para por cor na string
         'branco': '\033[37m',
         'negrito': '\033[1m',
         'inverte_cores': '\033[7m',
-        # Adicione outras cores conforme necessário
     }
 
     if cor not in cores:
-        raise ValueError(f'Cor "{cor}" não é suportada.')
+        raise ValueError(f'Cor "{cor}" não é suportada.') # lançando o erro, caso a cor esteja fora da lista
 
     print(f'{cores[cor]}{texto}{cores["reset"]}')
 
-# Função para adicionar um produto à lista
 def adicionar_produto(nome, quant):
     nome = nome.strip().lower()
 
-    for item in produtos:
+    for item in produtos: # logica para não repetir produtos na lista geral
         if item["Produto"] == nome:
             item["Quantidade"] += quant
             return
 
-    produtos.append({"Produto": nome, "Quantidade": quant})
+    produtos.append({"Produto": nome, "Quantidade": quant}) # add caso n tenha
 
-# Função para remover um produto da lista
 def remover_produto(nome, quant):
     nome = nome.strip().lower()
-    indice = next((index for index, produto in enumerate(produtos) if produto["Produto"] == nome), None)
 
-    if indice is not None:
-        if produtos[indice]["Quantidade"] >= quant:
-            produtos[indice]["Quantidade"] -= quant
-            if produtos[indice]["Quantidade"] == 0:
-                produtos.pop(indice)
-        else:
-            print(f'A quantidade a ser removida para "{nome}" excede a quantidade presente na lista.')
-    else:
-        print(f'O produto "{nome}" não foi encontrado no inventário.')
+    for index, produto in enumerate(produtos): # logica para procurar o indice do produto
+        if produto["Produto"] == nome:
+            if produtos[index]["Quantidade"] >= quant:
+                produtos[index]["Quantidade"] -= quant
+                if produtos[index]["Quantidade"] == 0:
+                    produtos.pop(index) # remove da lista quando o valor é zero
+                return
+            else:
+                print(f'A quantidade a ser removida para "{nome}" excede a quantidade presente na lista.')
+                return
 
-# Função para salvar a lista de produtos em um arquivo CSV
-def salvar_csv(nome_pasta, nome_arquivo):
+    print(f'O produto "{nome}" não foi encontrado no inventário.')
+
+def salvar_csv(nome_pasta, nome_arquivo): # salva a lista de produtos em csv
     with open(os.path.join(nome_pasta, nome_arquivo), "w", newline="") as csvfile:
         fieldnames = ["Produto", "Quantidade"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -74,31 +72,25 @@ def salvar_csv(nome_pasta, nome_arquivo):
         writer.writeheader()
         writer.writerows(produtos)
 
-# Função para gerar código QR e PDF a partir da lista de produtos
-def gerar_qr_code(nome_pasta):
-    tabela_csv = os.path.join(nome_pasta, "tabela_inventario.csv")
-
-    # Salva a lista de produtos em um arquivo CSV
+def gerar_qr_code(nome_pasta): # função para gerar o qr code e o  pdf (to  pensando em tirar o pdf)
+    tabela_csv = os.path.join(nome_pasta, "tabela_inventario.csv") # colocando a tabela na pasta
+    # na main lá em baixo tem uma parte do codigo para verificar a existencia da pasta
     salvar_csv(nome_pasta, "tabela_inventario.csv")
 
-    # Cria um objeto QRCode com configurações específicas
-    qr = qrcode.QRCode(
+    qr = qrcode.QRCode( # não sei perfeitamente como ta funcionando isso, mas é um objeto com as informações do qrcode
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
         border=4,
     )
 
-    # Lê o arquivo CSV e adiciona os dados ao objeto QRCode
-    with open(tabela_csv, 'r') as csvfile:
+    with open(tabela_csv, 'r') as csvfile: # lê o arquivo e add os dados
         qr.add_data(csvfile.read())
         qr.make(fit=True)
 
-    # Salva a imagem do código QR
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(os.path.join(nome_pasta, "tabela_inventario.png"))
 
-# Função para gerar um PDF a partir da lista de produtos e do código QR
 def gerar_pdf(nome_pasta):
     nome_arquivo_pdf = os.path.join(nome_pasta, "inventario.pdf")
     c = canvas.Canvas(nome_arquivo_pdf)
@@ -113,11 +105,10 @@ def gerar_pdf(nome_pasta):
     c.save()
     print(f"PDF gerado em {nome_arquivo_pdf}")
 
-# Função para modificar as cores do menu
 def modificar_cores_menu():
-    global cores  # Certifique-se de que a variável cores é acessível globalmente
+    global cores # é para isso que precisa da cores na global
 
-    print("\n======= MODIFICAR CORES DO MENU =======")
+    print("\n========= MODIFICAR CORES DO MENU =========")
     print("Cores disponíveis:")
     for cor in cores.keys():
         print(f"{cor}")
@@ -130,15 +121,14 @@ def modificar_cores_menu():
         print(f'A cor "{cor_menu}" não é suportada. A cor do menu permanecerá inalterada.')
         return None
 
-# Função para criar um menu interativo
-def menu_interativo():
+def menu_interativo(): # menu do sistema
     nome_pasta = "inventario"
-    os.makedirs(nome_pasta, exist_ok=True)
+    os.makedirs(nome_pasta, exist_ok=True) # logica que eu tinha falado sobre criar a pasta caso ela n exista (remove possiveis erros)
 
-    cor_menu = 'vermelho'  # Cor padrão para o menu
+    cor_menu = 'vermelho' # cor padrão 
 
     while True:
-        imprimir_string_colorida("\n======= MENU =======", cor_menu)
+        imprimir_string_colorida("\n======= MENU =======", cor_menu) # a função para imprimir (to pensando em usar o map para printar tudo e reduzir a uma linha quase)
         print("1. Adicionar Produto")
         print("2. Remover Produto")
         print("3. Visualizar Inventario")
@@ -166,7 +156,7 @@ def menu_interativo():
             print("\n=== Inventario ===")
             for produto in produtos:
                 print(f"{produto['Produto']}: {produto['Quantidade']}")
-        elif escolha == "4":
+        elif escolha == "4": # depois quero implementar uma função para o usuario dar o nome a pasta
             gerar_qr_code(nome_pasta)
             gerar_pdf(nome_pasta)
             print(f"Arquivos gerados na pasta: {nome_pasta}")
