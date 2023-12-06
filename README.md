@@ -2,7 +2,7 @@
 
 - **Autor:** José Gustavo Victor Pinheiro Alencar
 - **E-mail:** josegustavovictor@gmail.com
-- **E-mail Institucional:** josegustavovictor@gusp.br
+- **E-mail Institucional:** josegustavovictor@usp.br
 - **Contato:** (88) 99801-4457
 
 ---
